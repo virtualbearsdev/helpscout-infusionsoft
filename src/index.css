@@ -1,4 +1,438 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Rufina:wght@400;700&display=swap');
+
 body {
   margin: 0;
   display: flex;
+}
+
+/* Zendesk Styles */
+.container {
+  padding: 0 20px;
+}
+
+#content {
+  /* overflow-x: hidden; */
+  color: #4A4669;
+  font-family: 'Montserrat', sans-serif;
+}
+
+#content td {
+  font-size: 12px;
+  padding-top: 2px;
+}
+
+.app_view {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#coaching-link {
+  cursor: pointer;
+}
+
+#content .info-header {
+  margin-bottom: 0;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+#content .info-content {
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+#content .radio-inline input[type="radio"] {
+  vertical-align: middle;
+  margin-right: 5px;
+  margin-bottom: 2px;
+}
+
+#content .form-control {
+  box-shadow: none;
+  background: #f7f7f7;
+}
+
+#content .radio-inline {
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+#content .search-form {
+  margin-top: 15px;
+}
+
+#error-div {
+  display: none;
+  width: 100%;
+  text-align: center;
+  color: #ff0000;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+#tag-error,
+#note-error,
+#lead-error {
+  /* visibility: hidden; */
+  display: none;
+  text-align: left;
+  color: #ff0000;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+#note-success {
+  /* visibility: hidden; */
+  display: none;
+  text-align: left;
+  color: green;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+#lead-success {
+  /* visibility: hidden; */
+  display: none;
+  text-align: left;
+  color: green;
+  font-weight: 500;
+  margin-bottom: 0px;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+#content .profile-link {
+  color: #4760FA;
+}
+
+#search_value::placeholder {
+  color: #4A4669;
+  opacity: 1;
+  /* Firefox */
+  font-weight: 500;
+  font-size: 14px;
+}
+
+#search_value:-ms-input-placeholder {
+  /* Internet Explorer 10-11 */
+  color: #4A4669;
+  font-weight: 500;
+}
+
+#search_value::-ms-input-placeholder {
+  /* Microsoft Edge */
+  color: #4A4669;
+  font-weight: 500;
+}
+
+#content .email-status {
+  font-weight: 600;
+  color: green;
+  /* margin-left: 20px; */
+  font-size: 14px;
+  padding-left: 5px;
+  text-align: right;
+  margin-bottom: 0;
+}
+
+#content .radio-inline:nth-child(2) {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+#content .contact-header {
+  padding: 0.5rem 1rem;
+}
+
+#content .contact-container .card-header {
+  cursor: pointer;
+}
+
+#content .contact-container .contact-detail-container {
+  transition: height 2s;
+  height: 0;
+  padding: 0 !important;
+  display: none;
+}
+
+#content .contact-container.active .contact-detail-container {
+  height: auto;
+  transition: height 2s;
+  display: block;
+  /* padding: 0.5rem 1rem 1rem !important; */
+  border-bottom: 0;
+}
+
+#content #loading-gif,
+#content #loading-gif-page,
+#content #loading-gif-calls {
+  width: 100%;
+  text-align: center;
+  display: none;
+}
+
+#content #loading-gif img,
+#content #loading-gif-page img,
+#content #loading-gif-calls img {
+  max-width: 50px;
+  width: 50px;
+}
+
+.no-results {
+  display: none;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+#content .tag-header,
+#content .tag-date {
+  font-weight: 500;
+  /* font-size: 14px; */
+  font-size: 13px;
+  margin-bottom: 0;
+
+}
+
+.tag-date {
+  width: 90px;
+}
+
+#content .tag-header {
+  max-width: 200px;
+}
+
+#content .info-icons {
+  font-size: 16px !important;
+  margin-right: 8px;
+  vertical-align: text-bottom;
+}
+
+#content .tag-header span,
+#content .tag-date span {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+#tags-select {
+  width: 100%;
+  padding: 5px 10px;
+}
+
+#content .add-tag-btn,
+#search-contact-submit,
+#content .update-email-status-btn {
+  background-color: #4760FA;
+  text-transform: uppercase;
+  color: #fff;
+  border-radius: 0;
+  font-weight: 500;
+  box-shadow: none;
+  outline: none;
+  font-size: 14px;
+}
+
+#optin-header {
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 0;
+}
+
+#content .optin-group {
+  display: flex;
+  position: relative;
+  align-items: center;
+  column-gap: 20px;
+}
+
+#content .tag-selection-container {
+  margin-top: 10px;
+}
+
+#content .select-tag {
+  background: rgba(0, 0, 0, .03);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+#content .search-header {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+#content .tags-header {
+  /* margin-bottom: 5px; */
+  margin-bottom: 0;
+  font-weight: 700;
+  margin-top: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 16px;
+}
+
+#content .tags-details {
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 5px;
+  column-gap: 10px;
+}
+
+.tag-header-container a {
+  color: #4A4669;
+  text-decoration: underline;
+}
+
+div.tags-details:nth-child(even) {
+  background-color: #F7F7F7;
+}
+
+#content .tag-card .card-body {
+  padding: 10px;
+}
+
+#content .tags-details:nth-last-child(1):nth-child(odd) {
+  border-bottom: solid 0px #d5d5d5 !important;
+}
+
+/* Style the tab */
+.tab {
+  overflow: hidden;
+  border: 0;
+  background-color: #4A4669;
+  /* added this because the phone tab was removed */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Style the buttons that are used to open the tab content */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 10px 10px 7px 10px;
+  transition: 0.3s;
+  color: #fff;
+  /* width: 25%; */
+  width: 33.3333%;
+  border-bottom: solid 1px #4A4669;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #f1f1f1;
+  color: #4A4669;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #f1f1f1;
+  color: #4A4669;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.add-note-btn,
+.add-lead-btn {
+  font-weight: 600;
+  background: #4760FA;
+  width: 100%;
+  color: #fff;
+  margin-top: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.add-note-btn:hover {
+  color: #fff
+}
+
+.note-card {
+  font-size: 14px;
+}
+
+.note-card .card-header {
+  font-weight: 500;
+}
+
+.note-card .card-body {
+  display: none;
+}
+
+.note-card .fa-chevron-down {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+.recording-card .note-card .fa-chevron-down {
+  top: 14px;
+}
+
+.note-card .fa-chevron-down.active {
+  transform: rotate(180deg);
+}
+
+.recording-card .card-body {
+  font-size: 14px;
+  padding-bottom: 0;
+}
+
+.recording-card .text-small {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.recording-card .card-header {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.recording-card p {
+  font-size: 16px;
+}
+
+/* for new section */
+.new-section-col .card {
+  /* background-color: #fa00000a; */
+  background-color: #fa000012;
+}
+
+/* end of for new section */
+
+.col-md-6, .col-lg-6 {
+  max-width: 50% !important;
 }
