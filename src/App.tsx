@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import './index.css';
 import './bootstrap.min.css';
+import { FaMagnifyingGlass } from "react-icons/fa6";
 
 function App() {
   const appRef = useSetAppHeight();
@@ -20,6 +21,7 @@ function App() {
   const [customer, setCustomer] = useState(null);
   const [status, setStatus] = useState<string | undefined>("unknown status");
   const [searchBy, setSearchBy] = useState('email');
+  const [customerEmail, setCustomerEmail] = useState('');
   const { user, conversation } = useHelpScoutContext();
 
   useEffect(() => {
@@ -28,6 +30,8 @@ function App() {
 
     if (conversation?.customers) {
       setCustomer(conversation.customers[0]);
+      var customerData = conversation.customers[0];
+      setCustomerEmail(customerData.emails[0].value);
     }
   }, [user, conversation]);
 
@@ -115,9 +119,9 @@ function App() {
                 <div className="col-lg-12">
                   <form className="form-inline search-form">
                     <div className="input-group mb-3">
-                      <input type="text" className="form-control" id="search_value" placeholder="Search" value="{{search_value}}" />
+                      <input type="text" className="form-control" id="search_value" placeholder="Search" value={customerEmail} />
                       <div className="input-group-append">
-                        <button className="btn btn-primary" id="search-contact-submit"><i className="fa-solid fa-magnifying-glass"></i></button>
+                        <button className="btn btn-primary" id="search-contact-submit"><FaMagnifyingGlass /></button>
                       </div>
                     </div>
                   </form>

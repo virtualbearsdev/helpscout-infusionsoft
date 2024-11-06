@@ -51,6 +51,7 @@ body {
 #content .form-control {
   box-shadow: none;
   background: #f7f7f7;
+  font-size: 14px;
 }
 
 #content .radio-inline {
