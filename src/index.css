@@ -20,6 +20,10 @@ body {
   font-family: 'Montserrat', sans-serif;
 }
 
+.tags-container {
+  word-break: break-word;
+}
+
 #content td {
   font-size: 12px;
   padding-top: 2px;
@@ -75,7 +79,6 @@ body {
 }
 
 #error-div {
-  display: none;
   width: 100%;
   text-align: center;
   color: #ff0000;
@@ -87,7 +90,6 @@ body {
 #note-error,
 #lead-error {
   /* visibility: hidden; */
-  display: none;
   text-align: left;
   color: #ff0000;
   font-weight: 500;
@@ -97,7 +99,6 @@ body {
 
 #note-success {
   /* visibility: hidden; */
-  display: none;
   text-align: left;
   color: green;
   font-weight: 500;
@@ -107,7 +108,6 @@ body {
 
 #lead-success {
   /* visibility: hidden; */
-  display: none;
   text-align: left;
   color: green;
   font-weight: 500;
@@ -180,12 +180,17 @@ body {
   border-bottom: 0;
 }
 
-#content #loading-gif,
 #content #loading-gif-page,
 #content #loading-gif-calls {
   width: 100%;
   text-align: center;
   display: none;
+}
+
+#content #loading-gif {
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 
 #content #loading-gif img,
@@ -377,8 +382,17 @@ div.tags-details:nth-child(even) {
   display: block;
 }
 
-.add-note-btn,
 .add-lead-btn {
+  font-weight: 600;
+  background: #4760FA;
+  width: 100%;
+  color: #fff;
+  margin-top: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.add-note-btn {
   font-weight: 600;
   background: #4760FA;
   width: 100%;

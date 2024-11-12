@@ -16,6 +16,13 @@ import LoadingImg from './assets/images/loading.gif';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 
+const initialNoteData = Object.freeze({
+  contact_id: '',
+  body: '',
+  type: 'Other',
+  title: '',
+});
+
 function App() {
   const appRef = useSetAppHeight();
   const [userEmail, setUserEmail] = useState<string | undefined>(
@@ -28,10 +35,17 @@ function App() {
   const [searchBy, setSearchBy] = useState<string | undefined>('email');
   const [customerEmail, setCustomerEmail] = useState<string | undefined>('');
   const { user, conversation } = useHelpScoutContext();
+  const [searchValue, setSearchValue] = useState<any | null>(null);
+  const [selectedTag, setSelectedTag] = useState<any | null>(null);
+  const [tagLoading, setTagLoading] = useState<boolean | null>(false);
+  const [noteLoading, setNoteLoading] = useState<boolean | null>(false);
+  const [noteFormData, setNoteFormData] = useState<any | null>(initialNoteData);
+  const [adminName, setAdminName] = useState<string | null>(null);
 
   const [ifCustomer, setIfCustomer] = useState<any | null>(null);
   const [ifCustomerLoading, setIfCustomerLoading] = useState<boolean | null>(false);
   const [selectedTabs, setSelectedTabs] = useState<any | null>({});
+  const [initialTabNavigation, setInitialTabNavigation] = useState<any | null>('info');
   const [selectedOtherTabs, setSelectedOtherTabs] = useState<any | null>({});
   const [selectedCustomerTabs, setSelectedCustomerTabs] = useState<any | null>({});
   const [activeNoteId, setActiveNoteId] = useState<number | null>(null);
@@ -44,13 +58,38 @@ function App() {
     [userId: number]: true | false;
   }
 
+  const handleSearchChange = (e: any) => {
+    setSearchValue(e.target.value);
+  }
+
+  const handleTagChange = (e: any) => {
+    setSelectedTag(e.target.value);
+  }
+
+  const handleSearchTypeChange = (searchBy: any) => {
+    setSearchBy(searchBy);
+    setSearchValue('');
+  }
+
+  const handleChangeNote = (e: any) => {
+    setNoteFormData({
+      ...noteFormData,
+      [e.target.name]: e.target.value,
+    });
+  }
+
+  const onSearchSubmit = async (searchValue: any, searchBy: any, e: any) => {
+    e.preventDefault();
+    getIfCustomerData(searchValue, searchBy);
+  }
+
   // Get the Customer Data
-  const getIfCustomerData = async (email: any) => {
-    var testEmail = 'jeno@dropshiplifestyle.com';
+  const getIfCustomerData = async (searchValue: any, searchBy: any) => {
+    // var testEmail = 'jeno@dropshiplifestyle.com';
     try {
       setIfCustomerLoading(true);
       const response = await axios.get(
-        import.meta.env.VITE_APP_API_ENDPOINT + 'search-member-zendesk.php?search_type=email&search_value=' + testEmail,
+        import.meta.env.VITE_APP_API_ENDPOINT + 'search-member-zendesk.php?search_type=' + searchBy + '&search_value=' + searchValue,
         {
           headers: {
             'Content-Type': 'application/json', // Ensure it's sending as JSON
@@ -58,31 +97,35 @@ function App() {
         }
       );
 
-      const { success, contacts, other_contacts } = response.data;
+      const { success, contacts, other_contacts, error } = response.data;
 
       if (success) {
         setContacts(contacts);
         // Initialize selectedTabs for each user to 'info' by default
         const initialTabs: SelectedTabs = {};
         contacts.forEach((user: any) => {
-          initialTabs[user.id] = 'info'; // Default tab for each user
+          initialTabs[user.id] = initialTabNavigation; // Default tab for each user
         });
         setSelectedTabs(initialTabs);
         if (other_contacts) {
           setOtherContacts(other_contacts);
           const initialTabs: SelectedTabs = {};
           other_contacts.forEach((user: any) => {
-            initialTabs[user.id] = 'info'; // Default tab for each user
+            initialTabs[user.id] = initialTabNavigation; // Default tab for each user
           });
           setSelectedOtherTabs(initialTabs);
         }
         setIfCustomerLoading(false);
       } else {
-        HelpScout.showNotification(
-          NOTIFICATION_TYPES.ERROR,
-          "There has been an error getting the customer data, please try again!"
-        );
+        if (error != "No contacts found") {
+          HelpScout.showNotification(
+            NOTIFICATION_TYPES.ERROR,
+            "There has been an error getting the customer data, please try again!"
+          );
+        }
+        setContacts([]);
         setIfCustomerLoading(false);
+
       }
     } catch (err) {
       HelpScout.showNotification(
@@ -90,6 +133,152 @@ function App() {
         "There has been an error getting the customer data, please try again!"
       );
       setIfCustomerLoading(false);
+    }
+  };
+
+  const addLeadTag = async (tagID: any, leadID: any, e: any) => {
+    e.preventDefault();
+    if (tagID && leadID) {
+      try {
+        setTagLoading(true);
+        const response = await axios.post(
+          import.meta.env.VITE_APP_API_ENDPOINT + 'add-tag-zendesk.php', { tagID, leadID }
+        );
+
+        const { status, error } = response.data;
+
+        if (status == "Success") {
+          HelpScout.showNotification(
+            NOTIFICATION_TYPES.SUCCESS,
+            'Tag added successfully'
+          );
+          getIfCustomerData(searchValue, searchBy);
+          setTagLoading(false);
+        } else {
+          HelpScout.showNotification(
+            NOTIFICATION_TYPES.ERROR,
+            status
+          );
+          setTagLoading(false);
+        }
+      } catch (err) {
+        HelpScout.showNotification(
+          NOTIFICATION_TYPES.ERROR,
+          "There has been an error adding tag, please try again!"
+        );
+
+        //https://zapier.com/editor/191980951/draft/191980951/sample
+        const response = await axios.post(
+          'https://hooks.zapier.com/hooks/catch/911460/34m0i69/', err
+        );
+
+        if (response) {
+          console.log(response);
+        }
+
+        setTagLoading(false);
+      }
+    } else {
+      HelpScout.showNotification(
+        NOTIFICATION_TYPES.ERROR,
+        'Tag is required'
+      );
+    }
+    setSelectedTag('');
+  };
+
+  const addLeadNote = async (contactID: any, e: any) => {
+    e.preventDefault();
+    if (noteFormData) {
+      let appendedNoteFormData = new FormData();
+      appendedNoteFormData.append('contact_id', contactID);
+      appendedNoteFormData.append('body', noteFormData.body + ' - ' + adminName);
+      appendedNoteFormData.append('type', noteFormData.type);
+      appendedNoteFormData.append('title', noteFormData.title);
+      try {
+        setNoteLoading(true);
+        const response = await axios.post(
+          import.meta.env.VITE_APP_API_ENDPOINT + 'add-note-zendesk.php', appendedNoteFormData,
+          {headers: { 'content-type': 'multipart/form-data' }}
+        );
+
+        const { status, error } = response.data;
+
+        if (status) {
+          setInitialTabNavigation('note');
+          HelpScout.showNotification(
+            NOTIFICATION_TYPES.SUCCESS,
+            'Note added successfully'
+          );
+          getIfCustomerData(searchValue, searchBy);
+          setNoteLoading(false);
+        } else {
+          HelpScout.showNotification(
+            NOTIFICATION_TYPES.ERROR,
+            "There has been an error adding note, please try again!"
+          );
+          setNoteLoading(false);
+        }
+      } catch (err) {
+        HelpScout.showNotification(
+          NOTIFICATION_TYPES.ERROR,
+          "There has been an error adding note, please try again!"
+        );
+
+        setNoteLoading(false);
+      }
+    } else {
+      HelpScout.showNotification(
+        NOTIFICATION_TYPES.ERROR,
+        'Please fill up all fields'
+      );
+    }
+  };
+
+  const addLead = async (contactID: any, e: any) => {
+    e.preventDefault();
+    if (noteFormData) {
+      let appendedNoteFormData = new FormData();
+      appendedNoteFormData.append('contact_id', contactID);
+      appendedNoteFormData.append('body', noteFormData.body + ' - ' + adminName);
+      appendedNoteFormData.append('type', noteFormData.type);
+      appendedNoteFormData.append('title', noteFormData.title);
+      try {
+        setNoteLoading(true);
+        const response = await axios.post(
+          import.meta.env.VITE_APP_API_ENDPOINT + 'add-note-zendesk.php', appendedNoteFormData,
+          {headers: { 'content-type': 'multipart/form-data' }}
+        );
+
+        const { status, error } = response.data;
+
+        if (status) {
+          HelpScout.showNotification(
+            NOTIFICATION_TYPES.SUCCESS,
+            'Note added successfully'
+          );
+          getIfCustomerData(searchValue, searchBy);
+          setNoteLoading(false);
+        } else {
+          HelpScout.showNotification(
+            NOTIFICATION_TYPES.ERROR,
+            "There has been an error adding note, please try again!"
+          );
+          setNoteLoading(false);
+        }
+      } catch (err) {
+        HelpScout.showNotification(
+          NOTIFICATION_TYPES.ERROR,
+          "There has been an error adding note, please try again!"
+        );
+
+        setNoteLoading(false);
+      }
+    } else {
+      HelpScout.showNotification(
+        NOTIFICATION_TYPES.ERROR,
+        'Please fill up all fields'
+      );
     }
   };
 
@@ -118,20 +307,24 @@ function App() {
 
   useEffect(() => {
     setUserEmail(user?.email);
+    console.log("user", user);
+    setAdminName(user?.firstName + '' + user?.lastName);
     setStatus(conversation?.status);
 
     if (conversation?.customers) {
       setCustomer(conversation.customers[0]);
       var customerData = conversation.customers[0];
       setCustomerEmail(customerData.emails[0].value);
-
+      if (!searchValue) {
+        setSearchValue(customerData.emails[0].value);
+      }
     }
   }, [user, conversation]);
 
   useEffect(() => {
     if (customer?.emails && customer?.emails.length > 0) {
       var customer_email = customer.emails[0].value;
-      getIfCustomerData(customer_email);
+      getIfCustomerData(customer_email, searchBy);
     }
   }, [customer]);
 
@@ -156,13 +349,13 @@ function App() {
                   {searchBy == "email" ?
                     <>
                       <label className="radio-inline">
-                        <input type="radio" onChange={() => setSearchBy('email')} className="search-radio" name="search_radio" value="email" checked />Email
+                        <input type="radio" onChange={() => handleSearchTypeChange('email')} className="search-radio" name="search_radio" value="email" checked />Email
                       </label>
                     </>
                     :
                     <>
                       <label className="radio-inline">
-                        <input type="radio" onChange={() => setSearchBy('email')} className="search-radio" name="search_radio" value="email" />Email
+                        <input type="radio" onChange={() => handleSearchTypeChange('email')} className="search-radio" name="search_radio" value="email" />Email
                       </label>
                     </>
                   }
@@ -171,13 +364,13 @@ function App() {
                   {searchBy == "first_name" ?
                     <>
                       <label className="radio-inline">
-                        <input type="radio" onChange={() => setSearchBy('first_name')} className="search-radio" name="search_radio" value="first_name" checked />First Name
+                        <input type="radio" onChange={() => handleSearchTypeChange('first_name')} className="search-radio" name="search_radio" value="first_name" checked />First Name
                       </label>
                     </>
                     :
                     <>
                       <label className="radio-inline">
-                        <input type="radio" onChange={() => setSearchBy('first_name')} className="search-radio" name="search_radio" value="first_name" />First Name
+                        <input type="radio" onChange={() => handleSearchTypeChange('first_name')} className="search-radio" name="search_radio" value="first_name" />First Name
                       </label>
                     </>
                   }
@@ -186,13 +379,13 @@ function App() {
                   {searchBy == "last_name" ?
                     <>
                       <label className="radio-inline">
-                        <input type="radio" onChange={() => setSearchBy('last_name')} className="search-radio" name="search_radio" value="last_name" checked />Last Name
+                        <input type="radio" onChange={() => handleSearchTypeChange('last_name')} className="search-radio" name="search_radio" value="last_name" checked />Last Name
                       </label>
                     </>
                     :
                     <>
                       <label className="radio-inline">
-                        <input type="radio" onChange={() => setSearchBy('last_name')} className="search-radio" name="search_radio" value="last_name" />Last Name
+                        <input type="radio" onChange={() => handleSearchTypeChange('last_name')} className="search-radio" name="search_radio" value="last_name" />Last Name
                       </label>
                     </>
                   }
@@ -201,23 +394,23 @@ function App() {
                   {searchBy == "phone" ?
                     <>
                       <label className="radio-inline">
-                        <input type="radio" onChange={() => setSearchBy('phone')} className="search-radio" name="search_radio" value="phone" checked />Phone
+                        <input type="radio" onChange={() => handleSearchTypeChange('phone')} className="search-radio" name="search_radio" value="phone" checked />Phone
                       </label>
                     </>
                     :
                     <>
                       <label className="radio-inline">
-                        <input type="radio" onChange={() => setSearchBy('phone')} className="search-radio" name="search_radio" value="phone" />Phone
+                        <input type="radio" onChange={() => handleSearchTypeChange('phone')} className="search-radio" name="search_radio" value="phone" />Phone
                       </label>
                     </>
                   }
                 </div>
                 <div className="col-lg-12">
-                  <form className="form-inline search-form">
+                  <form className="form-inline search-form" onSubmit={() => onSearchSubmit(searchValue, searchBy, event)}>
                     <div className="input-group mb-3">
-                      <input type="text" className="form-control" id="search_value" placeholder="Search" value={customerEmail} />
+                      <input type="text" className="form-control" id="search_value" placeholder="Search" value={searchValue} onChange={handleSearchChange} />
                       <div className="input-group-append">
-                        <button className="btn btn-primary" id="search-contact-submit"><FaMagnifyingGlass /></button>
+                        <button className="btn btn-primary" id="search-contact-submit" type="submit"><FaMagnifyingGlass /></button>
                       </div>
                     </div>
                   </form>
@@ -348,15 +541,23 @@ function App() {
                                             }
                                             {add_tags && add_tags.length > 0 &&
                                               <div className="col-lg-12 px-0 tag-selection-container">
-                                                <div className="input-group mb-3">
-                                                  <select name="tags_selection" className="form-control select-tag" id="tag-select-{{contact.id}}">
-                                                    <option hidden selected value="">Select a tag</option>
-                                                    {add_tags.map((add_tag: any) => (
-                                                      <option value={add_tag.id}>{add_tag.name}</option>
-                                                    ))}
-                                                  </select>
-                                                  <button className="btn add-tag-btn" data-val={contact.id}>Add</button>
-                                                </div>
+                                                <form onSubmit={() => addLeadTag(selectedTag, contact?.id, event)}>
+                                                  <div className="input-group mb-3">
+                                                    <select name="tags_selection" className="form-control select-tag" id={`tag-select-${contact.id}`} onChange={handleTagChange}>
+                                                      <option hidden selected value="">Select a tag</option>
+                                                      {add_tags.map((add_tag: any) => (
+                                                        <option value={add_tag.id}>{add_tag.name}</option>
+                                                      ))}
+                                                    </select>
+                                                    {tagLoading ?
+                                                      <button className="btn add-tag-btn" data-val={contact.id} type="button">Adding...</button>
+                                                      :
+                                                      <button className="btn add-tag-btn" data-val={contact.id} type="submit">Add</button>
+                                                    }
+
+                                                  </div>
+                                                </form>
+
                                                 {/* <p id="tag-error">Please select a tag!</p> */}
                                               </div>
                                             }
@@ -394,17 +595,22 @@ function App() {
                                         <div className="row">
                                           <div className="col-lg-12">
                                             <h6 className="tags-header mb-2 mt-0">Add Note</h6>
-                                            <input type="text" placeholder="Title" className="form-control mb-3" id="note-title-{{contact.id}}" />
-                                            <textarea placeholder="Note" className="form-control" id="note-{{contact.id}}" rows={3}></textarea>
+                                            <input type="text" placeholder="Title" className="form-control mb-3" id={`note-title-${contact.id}`} name="title" onChange={handleChangeNote} />
+                                            <textarea placeholder="Note" className="form-control" id={`note-${contact.id}`} rows={3} name="body" onChange={handleChangeNote}></textarea>
                                             {/* <p id="note-error">Please fill up all fields!</p>
                                             <p id="note-success">Note added successfully!</p> */}
-                                            <button className="btn add-note-btn" data-val={contact.id}>Add</button>
+                                            {noteLoading ?
+                                              <button className="btn add-note-btn btn-primary w-100 mt-3" data-val={contact.id} type="button">Adding...</button>
+                                              :
+                                              <button className="btn add-note-btn btn-primary w-100 mt-3" data-val={contact.id} type="button" onClick={() => addLeadNote(contact.id, event)}>Add</button>
+                                            }
+
                                             {notes && notes.length > 0 ?
                                               <>
                                                 <h6 className="tags-header mb-2 mt-3">Notes</h6>
                                                 {notes.map((note: any) => (
                                                   <>
-                                                    <div className="card mb-3 note-card" onClick={()=> setActiveNoteId((prevNoteId) => prevNoteId == note.id ? '' : note.id)}>
+                                                    <div className="card mb-3 note-card" onClick={() => setActiveNoteId((prevNoteId) => prevNoteId == note.id ? '' : note.id)}>
                                                       <div className="card-header p-2 fs-12">
                                                         {note.title}({note.type}) - {note.date_created} <i className={`fa fa-chevron-down ${activeNoteId == note.id ? 'active' : ''}`}></i>
                                                       </div>
@@ -419,6 +625,25 @@ function App() {
                                               :
                                               null
                                             }
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className={`tab-content contact-hot-lead-content ${selectedTabs[contact.id] === 'lead' ? 'active' : ''}`}>
+                                        <div className="row">
+                                          <div className="col-lg-12">
+                                            <h6 className="tags-header mb-2 mt-0">Add Lead</h6>
+                                            <form id="add-hot-lead-form">
+                                              <input type="email" placeholder="Customer Email" className="form-control mb-3" id="hot-lead-email" name="customer_email" defaultValue={searchValue} />
+                                              <input type="tel" placeholder="Customer Phone" className="form-control mb-3" id="hot-lead-phone" name="phone_number" defaultValue={contact?.phone} />
+
+                                              <input type="hidden" className="form-control mb-3" id="hot-lead-source" name="lead_source" value="Zendesk" />
+                                              <input type="hidden" className="form-control mb-3" id="is-hot-lead" name="hot_lead_radio" value="Yes" />
+                                              <textarea placeholder="Notes" className="form-control mb-3" id="hot-lead-notes" rows={3} name="lead_description"></textarea>
+                                              <input type="email" placeholder="Agent Email" className="form-control mb-3" name="team_email" id="hot-lead-team-email" defaultValue={userEmail} />
+                                              {/* <p id="lead-error">Please fill up all fields!</p>
+                                              <p id="lead-success">Lead added successfully!</p> */}
+                                              <button className="btn add-lead-btn btn-primary w-100 mt-3" data-val={contact.id}>Add Lead</button>
+                                            </form>
                                           </div>
                                         </div>
                                       </div>
