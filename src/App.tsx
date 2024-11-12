@@ -34,6 +34,7 @@ function App() {
   const [selectedTabs, setSelectedTabs] = useState<any | null>({});
   const [selectedOtherTabs, setSelectedOtherTabs] = useState<any | null>({});
   const [selectedCustomerTabs, setSelectedCustomerTabs] = useState<any | null>({});
+  const [activeNoteId, setActiveNoteId] = useState<number | null>(null);
 
   type SelectedTabs = {
     [userId: number]: 'info' | 'credits' | 'note' | 'lead';
@@ -394,20 +395,20 @@ function App() {
                                           <div className="col-lg-12">
                                             <h6 className="tags-header mb-2 mt-0">Add Note</h6>
                                             <input type="text" placeholder="Title" className="form-control mb-3" id="note-title-{{contact.id}}" />
-                                            <textarea placeholder="Note" className="form-control" id="note-{{contact.id}}" rows="3"></textarea>
+                                            <textarea placeholder="Note" className="form-control" id="note-{{contact.id}}" rows={3}></textarea>
                                             {/* <p id="note-error">Please fill up all fields!</p>
-                                          <p id="note-success">Note added successfully!</p> */}
+                                            <p id="note-success">Note added successfully!</p> */}
                                             <button className="btn add-note-btn" data-val={contact.id}>Add</button>
                                             {notes && notes.length > 0 ?
                                               <>
                                                 <h6 className="tags-header mb-2 mt-3">Notes</h6>
                                                 {notes.map((note: any) => (
                                                   <>
-                                                    <div className="card mb-3 note-card">
+                                                    <div className="card mb-3 note-card" onClick={()=> setActiveNoteId((prevNoteId) => prevNoteId == note.id ? '' : note.id)}>
                                                       <div className="card-header p-2 fs-12">
-                                                        {note.title}({note.type}) - {note.date_created} <i className="fa fa-chevron-down"></i>
+                                                        {note.title}({note.type}) - {note.date_created} <i className={`fa fa-chevron-down ${activeNoteId == note.id ? 'active' : ''}`}></i>
                                                       </div>
-                                                      <div className="card-body p-2">
+                                                      <div className={`card-body p-2 ${activeNoteId == note.id ? 'active' : ''}`}>
                                                         {note.body}
                                                       </div>
                                                     </div>

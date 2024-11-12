@@ -224,7 +224,7 @@ body {
 #content .tag-date {
   font-weight: 500;
   /* font-size: 14px; */
-  font-size: 13px;
+  font-size: 12px;
   margin-bottom: 0;
 
 }
@@ -402,6 +402,11 @@ div.tags-details:nth-child(even) {
 
 .note-card .card-body {
   display: none;
+  font-size: 13pxs;
+}
+
+.note-card .card-body.active {
+  display: block;
 }
 
 .note-card .fa-chevron-down {
