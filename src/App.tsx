@@ -37,10 +37,17 @@ function App() {
   const { user, conversation } = useHelpScoutContext();
   const [searchValue, setSearchValue] = useState<any | null>(null);
   const [selectedTag, setSelectedTag] = useState<any | null>(null);
-  const [tagLoading, setTagLoading] = useState<boolean | null>(false);
-  const [noteLoading, setNoteLoading] = useState<boolean | null>(false);
+  const [tagLoading, setTagLoading] = useState<{ [key: string]: boolean }>({});
+  const [noteLoading, setNoteLoading] = useState<{ [key: string]: boolean }>({});
   const [noteFormData, setNoteFormData] = useState<any | null>(initialNoteData);
   const [adminName, setAdminName] = useState<string | null>(null);
+  const [addLeadLoading, setAddLeadLoading] = useState<{ [key: string]: boolean }>({});
+  const [leadDescription, setLeadDescription] = useState<any | null>(null);
+  const [leadPhoneNumber, setLeadPhoneNumber] = useState<any | null>(null);
+  const [leadRadio, setLeadRadio] = useState<any | null>('Yes');
+  const [leadSource, setLeadSource] = useState<any | null>('Help Scout');
+  const [leadEmail, setLeadEmail] = useState<any | null>(null);
+  const [leadTeamEmail, setLeadTeamEmail] = useState<any | null>(null);
 
   const [ifCustomer, setIfCustomer] = useState<any | null>(null);
   const [ifCustomerLoading, setIfCustomerLoading] = useState<boolean | null>(false);
@@ -49,6 +56,7 @@ function App() {
   const [selectedOtherTabs, setSelectedOtherTabs] = useState<any | null>({});
   const [selectedCustomerTabs, setSelectedCustomerTabs] = useState<any | null>({});
   const [activeNoteId, setActiveNoteId] = useState<number | null>(null);
+  const [isAllowed, setIsAllowed] = useState<boolean | null>(false);
 
   type SelectedTabs = {
     [userId: number]: 'info' | 'credits' | 'note' | 'lead';
@@ -78,8 +86,25 @@ function App() {
     });
   }
 
+  const handleChangeAddLeadEmail = (e: any) => {
+    setLeadEmail(e.target.value);
+  }
+
+  const handleChangeAddLeadPhone = (e: any) => {
+    setLeadPhoneNumber(e.target.value);
+  }
+
+  const handleChangeAddLeadDescription = (e: any) => {
+    setLeadDescription(e.target.value);
+  }
+
+  const handleChangeAddLeadTeamEmail = (e: any) => {
+    setLeadTeamEmail(e.target.value);
+  }
+
   const onSearchSubmit = async (searchValue: any, searchBy: any, e: any) => {
     e.preventDefault();
+    // setInitialTabNavigation('info');
     getIfCustomerData(searchValue, searchBy);
   }
 
@@ -134,13 +159,14 @@ function App() {
       );
       setIfCustomerLoading(false);
     }
+    // setInitialTabNavigation('info');
   };
 
   const addLeadTag = async (tagID: any, leadID: any, e: any) => {
     e.preventDefault();
     if (tagID && leadID) {
       try {
-        setTagLoading(true);
+        setTagLoading((prevLoading) => ({ ...prevLoading, [leadID]: true }));
         const response = await axios.post(
           import.meta.env.VITE_APP_API_ENDPOINT + 'add-tag-zendesk.php', { tagID, leadID }
         );
@@ -153,13 +179,13 @@ function App() {
             'Tag added successfully'
           );
           getIfCustomerData(searchValue, searchBy);
-          setTagLoading(false);
+          setTagLoading((prevLoading) => ({ ...prevLoading, [leadID]: false }));
         } else {
           HelpScout.showNotification(
             NOTIFICATION_TYPES.ERROR,
             status
           );
-          setTagLoading(false);
+          setTagLoading((prevLoading) => ({ ...prevLoading, [leadID]: false }));
         }
       } catch (err) {
         HelpScout.showNotification(
@@ -176,7 +202,7 @@ function App() {
           console.log(response);
         }
 
-        setTagLoading(false);
+        setTagLoading((prevLoading) => ({ ...prevLoading, [leadID]: false }));
       }
     } else {
       HelpScout.showNotification(
@@ -196,10 +222,10 @@ function App() {
       appendedNoteFormData.append('type', noteFormData.type);
       appendedNoteFormData.append('title', noteFormData.title);
       try {
-        setNoteLoading(true);
+        setNoteLoading((prevLoading) => ({ ...prevLoading, [contactID]: true }));
         const response = await axios.post(
           import.meta.env.VITE_APP_API_ENDPOINT + 'add-note-zendesk.php', appendedNoteFormData,
-          {headers: { 'content-type': 'multipart/form-data' }}
+          { headers: { 'content-type': 'multipart/form-data' } }
         );
 
         const { status, error } = response.data;
@@ -211,13 +237,13 @@ function App() {
             'Note added successfully'
           );
           getIfCustomerData(searchValue, searchBy);
-          setNoteLoading(false);
+          setNoteLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
         } else {
           HelpScout.showNotification(
             NOTIFICATION_TYPES.ERROR,
             "There has been an error adding note, please try again!"
           );
-          setNoteLoading(false);
+          setNoteLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
         }
       } catch (err) {
         HelpScout.showNotification(
@@ -225,61 +251,178 @@ function App() {
           "There has been an error adding note, please try again!"
         );
 
-        setNoteLoading(false);
+        setNoteLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
       }
     } else {
       HelpScout.showNotification(
         NOTIFICATION_TYPES.ERROR,
         'Please fill up all fields'
       );
+      setNoteLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
     }
+    // setInitialTabNavigation('note');
   };
 
   const addLead = async (contactID: any, e: any) => {
     e.preventDefault();
-    if (noteFormData) {
-      let appendedNoteFormData = new FormData();
-      appendedNoteFormData.append('contact_id', contactID);
-      appendedNoteFormData.append('body', noteFormData.body + ' - ' + adminName);
-      appendedNoteFormData.append('type', noteFormData.type);
-      appendedNoteFormData.append('title', noteFormData.title);
-      try {
-        setNoteLoading(true);
-        const response = await axios.post(
-          import.meta.env.VITE_APP_API_ENDPOINT + 'add-note-zendesk.php', appendedNoteFormData,
-          {headers: { 'content-type': 'multipart/form-data' }}
-        );
+    // console.log("contactID", contactID);
+    const contactByEmail = contacts.find((contact: { id: any; }) => contact.id === contactID);
+    // console.log("contactByEmail", contactByEmail);
+    if ((leadEmail != "" && leadTeamEmail != "" && leadDescription != "" && leadEmail != null && leadTeamEmail != null && leadDescription != null) || (contactByEmail.email != "" && contactByEmail.email != null)) {
+      let appendedAddLeadFormData = new FormData();
+      appendedAddLeadFormData.append('customer_email', leadEmail ?? contactByEmail.email);
+      appendedAddLeadFormData.append('phone_number', leadPhoneNumber ?? contactByEmail.phone);
+      appendedAddLeadFormData.append('lead_source', leadSource);
+      appendedAddLeadFormData.append('hot_lead_radio', leadRadio);
+      appendedAddLeadFormData.append('lead_description', leadDescription);
+      appendedAddLeadFormData.append('team_email', leadTeamEmail);
 
-        const { status, error } = response.data;
+      // console.log("addLeadFormData", addLeadFormData);
+      let phone;
+      let phone_number;
+      let digit;
+      if (leadPhoneNumber != "" && leadPhoneNumber != null) {
+        phone = leadPhoneNumber;
+        phone_number = phone.replace(/\D/g, '');
+        digit = phone_number.toString()[0];
+      } else {
+        phone = "";
+        phone_number = "";
+        digit = "";
+      }
+      if (phone != "") {
+        if (digit) {
+          if ((leadEmail != "" && leadDescription != "") || (contactByEmail.email != "" && leadDescription != "")) {
+            try {
+              setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: true }));
+              //https://zapier.com/editor/173367360/published
+              const response = await axios.post(
+                'https://hooks.zapier.com/hooks/catch/911460/bptp2y6/', appendedAddLeadFormData,
+              );
 
-        if (status) {
-          HelpScout.showNotification(
-            NOTIFICATION_TYPES.SUCCESS,
-            'Note added successfully'
-          );
-          getIfCustomerData(searchValue, searchBy);
-          setNoteLoading(false);
+              const { status, error } = response.data;
+
+              if (status == "success") {
+                // https://zapier.com/editor/174158095/published/174158095
+                // Failsafe
+                const response = await axios.post(
+                  'https://hooks.zapier.com/hooks/catch/911460/bpq0tp5/', appendedAddLeadFormData,
+                );
+                const { status, error } = response.data;
+                if (status == "success") {
+                  HelpScout.showNotification(
+                    NOTIFICATION_TYPES.SUCCESS,
+                    'Hot lead added successfully!'
+                  );
+                }
+
+                getIfCustomerData(searchValue, searchBy);
+                setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+              } else {
+                HelpScout.showNotification(
+                  NOTIFICATION_TYPES.ERROR,
+                  "There has been an error adding note, please try again!"
+                );
+                setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+              }
+            } catch (err) {
+              HelpScout.showNotification(
+                NOTIFICATION_TYPES.ERROR,
+                "There has been an error adding note, please try again!"
+              );
+
+              setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+            }
+          } else {
+            if (leadEmail == "") {
+              HelpScout.showNotification(
+                NOTIFICATION_TYPES.ERROR,
+                "Please fill up customer email!"
+              );
+            }
+
+            if (leadDescription == "") {
+              HelpScout.showNotification(
+                NOTIFICATION_TYPES.ERROR,
+                "Please fill up lead description!"
+              );
+            }
+            setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+          }
         } else {
           HelpScout.showNotification(
             NOTIFICATION_TYPES.ERROR,
-            "There has been an error adding note, please try again!"
+            "Please enter a valid phone number!"
           );
-          setNoteLoading(false);
+          setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
         }
-      } catch (err) {
-        HelpScout.showNotification(
-          NOTIFICATION_TYPES.ERROR,
-          "There has been an error adding note, please try again!"
-        );
+      } else {
+        if ((leadEmail != "" && leadDescription != "") || (contactByEmail.email != "" && leadDescription != "")) {
+          try {
+            setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: true }));
+            //https://zapier.com/editor/173367360/published
+            const response = await axios.post(
+              'https://hooks.zapier.com/hooks/catch/911460/bptp2y6/', appendedAddLeadFormData,
+            );
 
-        setNoteLoading(false);
+            const { status, error } = response.data;
+
+            if (status == "success") {
+              // https://zapier.com/editor/174158095/published/174158095
+              // Failsafe
+              const response = await axios.post(
+                'https://hooks.zapier.com/hooks/catch/911460/bpq0tp5/', appendedAddLeadFormData,
+              );
+              const { status, error } = response.data;
+              if (status == "success") {
+                HelpScout.showNotification(
+                  NOTIFICATION_TYPES.SUCCESS,
+                  'Hot lead added successfully!'
+                );
+              }
+
+              getIfCustomerData(searchValue, searchBy);
+              setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+            } else {
+              HelpScout.showNotification(
+                NOTIFICATION_TYPES.ERROR,
+                "There has been an error adding note, please try again!"
+              );
+              setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+            }
+          } catch (err) {
+            HelpScout.showNotification(
+              NOTIFICATION_TYPES.ERROR,
+              "There has been an error adding note, please try again!"
+            );
+
+            setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+          }
+        } else {
+          if (leadEmail == "") {
+            HelpScout.showNotification(
+              NOTIFICATION_TYPES.ERROR,
+              "Please fill up customer email!"
+            );
+          }
+
+          if (leadDescription == "") {
+            HelpScout.showNotification(
+              NOTIFICATION_TYPES.ERROR,
+              "Please fill up lead description!"
+            );
+          }
+          setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+        }
       }
     } else {
       HelpScout.showNotification(
         NOTIFICATION_TYPES.ERROR,
         'Please fill up all fields'
       );
+      setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
     }
+    // setInitialTabNavigation('lead'); 
   };
 
   // Handle tab change for a specific user
@@ -296,7 +439,7 @@ function App() {
       ...prevTabs,
       [userId]: tab,
     }));
-  };
+  };  
 
   const handleCustomerTabChange = (userId: number, tab: true | false) => {
     setSelectedCustomerTabs((prevCustomerTabs: any) => ({
@@ -307,17 +450,14 @@ function App() {
 
   useEffect(() => {
     setUserEmail(user?.email);
-    console.log("user", user);
     setAdminName(user?.firstName + '' + user?.lastName);
     setStatus(conversation?.status);
-
+    setLeadTeamEmail(user?.email);
     if (conversation?.customers) {
       setCustomer(conversation.customers[0]);
       var customerData = conversation.customers[0];
       setCustomerEmail(customerData.emails[0].value);
-      if (!searchValue) {
-        setSearchValue(customerData.emails[0].value);
-      }
+      setSearchValue(customerData.emails[0].value);
     }
   }, [user, conversation]);
 
@@ -325,6 +465,12 @@ function App() {
     if (customer?.emails && customer?.emails.length > 0) {
       var customer_email = customer.emails[0].value;
       getIfCustomerData(customer_email, searchBy);
+    }
+    var referrer = document.referrer;
+    if (referrer.includes("https://secure.helpscout.net")) {
+      setIsAllowed(true);
+    } else {
+      setIsAllowed(false);
     }
   }, [customer]);
 
@@ -335,6 +481,10 @@ function App() {
     );
   }
 
+  if (!isAllowed) {
+    return <div className="App" ref={appRef}>Access Restricted: You cannot access this page directly.</div>;
+  }
+  
   return (
     <div className="App" ref={appRef}>
       <div id="content">
@@ -549,11 +699,15 @@ function App() {
                                                         <option value={add_tag.id}>{add_tag.name}</option>
                                                       ))}
                                                     </select>
-                                                    {tagLoading ?
-                                                      <button className="btn add-tag-btn" data-val={contact.id} type="button">Adding...</button>
-                                                      :
-                                                      <button className="btn add-tag-btn" data-val={contact.id} type="submit">Add</button>
-                                                    }
+                                                    <button
+                                                      className="btn add-tag-btn"
+                                                      data-val={contact.id}
+                                                      key={contact.id}
+                                                      type="submit"
+                                                      disabled={!!tagLoading[contact.id]}
+                                                    >
+                                                      {tagLoading[contact.id] ? "Adding..." : "Add"}
+                                                    </button>
 
                                                   </div>
                                                 </form>
@@ -594,17 +748,20 @@ function App() {
                                       <div className={`tab-content contact-note-content ${selectedTabs[contact.id] === 'note' ? 'active' : ''}`}>
                                         <div className="row">
                                           <div className="col-lg-12">
-                                            <h6 className="tags-header mb-2 mt-0">Add Note</h6>
-                                            <input type="text" placeholder="Title" className="form-control mb-3" id={`note-title-${contact.id}`} name="title" onChange={handleChangeNote} />
-                                            <textarea placeholder="Note" className="form-control" id={`note-${contact.id}`} rows={3} name="body" onChange={handleChangeNote}></textarea>
-                                            {/* <p id="note-error">Please fill up all fields!</p>
-                                            <p id="note-success">Note added successfully!</p> */}
-                                            {noteLoading ?
-                                              <button className="btn add-note-btn btn-primary w-100 mt-3" data-val={contact.id} type="button">Adding...</button>
-                                              :
-                                              <button className="btn add-note-btn btn-primary w-100 mt-3" data-val={contact.id} type="button" onClick={() => addLeadNote(contact.id, event)}>Add</button>
-                                            }
-
+                                            <form onSubmit={() => addLeadNote(contact.id, event)}>
+                                              <h6 className="tags-header mb-2 mt-0">Add Note</h6>
+                                              <input type="text" placeholder="Title" className="form-control mb-3" id={`note-title-${contact.id}`} name="title" onChange={handleChangeNote} />
+                                              <textarea placeholder="Note" className="form-control" id={`note-${contact.id}`} rows={3} name="body" onChange={handleChangeNote}></textarea>
+                                              <button
+                                                className="btn add-note-btn btn-primary w-100 mt-3"
+                                                data-val={contact.id}
+                                                key={contact.id}
+                                                type="submit"
+                                                disabled={!!noteLoading[contact.id]}
+                                              >
+                                                {noteLoading[contact.id] ? "Adding..." : "Add"}
+                                              </button>
+                                            </form>
                                             {notes && notes.length > 0 ?
                                               <>
                                                 <h6 className="tags-header mb-2 mt-3">Notes</h6>
@@ -632,17 +789,22 @@ function App() {
                                         <div className="row">
                                           <div className="col-lg-12">
                                             <h6 className="tags-header mb-2 mt-0">Add Lead</h6>
-                                            <form id="add-hot-lead-form">
-                                              <input type="email" placeholder="Customer Email" className="form-control mb-3" id="hot-lead-email" name="customer_email" defaultValue={searchValue} />
-                                              <input type="tel" placeholder="Customer Phone" className="form-control mb-3" id="hot-lead-phone" name="phone_number" defaultValue={contact?.phone} />
-
-                                              <input type="hidden" className="form-control mb-3" id="hot-lead-source" name="lead_source" value="Zendesk" />
-                                              <input type="hidden" className="form-control mb-3" id="is-hot-lead" name="hot_lead_radio" value="Yes" />
-                                              <textarea placeholder="Notes" className="form-control mb-3" id="hot-lead-notes" rows={3} name="lead_description"></textarea>
-                                              <input type="email" placeholder="Agent Email" className="form-control mb-3" name="team_email" id="hot-lead-team-email" defaultValue={userEmail} />
+                                            <form id="add-hot-lead-form" onSubmit={() => addLead(contact.id, event)}>
+                                              <input type="email" placeholder="Customer Email" className="form-control mb-3" id="hot-lead-email" name="customer_email" defaultValue={contact?.email} onChange={handleChangeAddLeadEmail} />
+                                              <input type="tel" placeholder="Customer Phone" className="form-control mb-3" id="hot-lead-phone" name="phone_number" defaultValue={contact?.phone} onChange={handleChangeAddLeadPhone} />
+                                              <textarea placeholder="Notes" className="form-control mb-3" id="hot-lead-notes" rows={3} name="lead_description" onChange={handleChangeAddLeadDescription}></textarea>
+                                              <input type="email" placeholder="Agent Email" className="form-control mb-3" name="team_email" id="hot-lead-team-email" defaultValue={userEmail} onChange={handleChangeAddLeadTeamEmail} />
                                               {/* <p id="lead-error">Please fill up all fields!</p>
                                               <p id="lead-success">Lead added successfully!</p> */}
-                                              <button className="btn add-lead-btn btn-primary w-100 mt-3" data-val={contact.id}>Add Lead</button>
+                                              <button
+                                                className="btn add-lead-btn btn-primary w-100 mt-3"
+                                                data-val={contact.id}
+                                                key={contact.id}
+                                                type="submit"
+                                                disabled={!!addLeadLoading[contact.id]}
+                                              >
+                                                {addLeadLoading[contact.id] ? "Adding..." : "Add"}
+                                              </button>
                                             </form>
                                           </div>
                                         </div>
