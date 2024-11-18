@@ -57,6 +57,7 @@ function App() {
   const [selectedCustomerTabs, setSelectedCustomerTabs] = useState<any | null>({});
   const [activeNoteId, setActiveNoteId] = useState<number | null>(null);
   const [isAllowed, setIsAllowed] = useState<boolean | null>(false);
+  const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
 
   type SelectedTabs = {
     [userId: number]: 'info' | 'credits' | 'note' | 'lead';
@@ -105,12 +106,52 @@ function App() {
   const onSearchSubmit = async (searchValue: any, searchBy: any, e: any) => {
     e.preventDefault();
     // setInitialTabNavigation('info');
+    setSelectedContactId((preSelectedContactId) => null);
     getIfCustomerData(searchValue, searchBy);
+    setSelectedTabs(null);
+    setLeadDescription('');
+    setNoteFormData(initialNoteData);
   }
+
+  // Get the Customer Data without loading
+  const getIfCustomerDataNoLoading = async (searchValue: any, searchBy: any) => {
+    // var testEmail = 'jeno@dropshiplifestyle.com';
+    setNoteFormData(initialNoteData);
+    try {
+      const response = await axios.get(
+        import.meta.env.VITE_APP_API_ENDPOINT + 'search-member-zendesk.php?search_type=' + searchBy + '&search_value=' + searchValue,
+        {
+          headers: {
+            'Content-Type': 'application/json', // Ensure it's sending as JSON
+          },
+        }
+      );
+
+      const { success, contacts, other_contacts, error } = response.data;
+
+      if (success) {
+        setContacts(contacts);
+      } else {
+        if (error != "No contacts found") {
+          HelpScout.showNotification(
+            NOTIFICATION_TYPES.ERROR,
+            "There has been an error getting the customer data, please try again!"
+          );
+        }
+        setContacts([]);
+      }
+    } catch (err) {
+      HelpScout.showNotification(
+        NOTIFICATION_TYPES.ERROR,
+        "There has been an error getting the customer data, please try again!"
+      );
+    }
+  };
 
   // Get the Customer Data
   const getIfCustomerData = async (searchValue: any, searchBy: any) => {
     // var testEmail = 'jeno@dropshiplifestyle.com';
+    setContacts([]);
     try {
       setIfCustomerLoading(true);
       const response = await axios.get(
@@ -126,19 +167,20 @@ function App() {
 
       if (success) {
         setContacts(contacts);
+
         // Initialize selectedTabs for each user to 'info' by default
         const initialTabs: SelectedTabs = {};
         contacts.forEach((user: any) => {
           initialTabs[user.id] = initialTabNavigation; // Default tab for each user
         });
-        setSelectedTabs(initialTabs);
+        // setSelectedTabs(initialTabs);
         if (other_contacts) {
           setOtherContacts(other_contacts);
           const initialTabs: SelectedTabs = {};
           other_contacts.forEach((user: any) => {
             initialTabs[user.id] = initialTabNavigation; // Default tab for each user
           });
-          setSelectedOtherTabs(initialTabs);
+          // setSelectedOtherTabs(initialTabs);
         }
         setIfCustomerLoading(false);
       } else {
@@ -178,7 +220,7 @@ function App() {
             NOTIFICATION_TYPES.SUCCESS,
             'Tag added successfully'
           );
-          getIfCustomerData(searchValue, searchBy);
+          getIfCustomerDataNoLoading(searchValue, searchBy);
           setTagLoading((prevLoading) => ({ ...prevLoading, [leadID]: false }));
         } else {
           HelpScout.showNotification(
@@ -215,6 +257,7 @@ function App() {
 
   const addLeadNote = async (contactID: any, e: any) => {
     e.preventDefault();
+    setSelectedContactId((prevContactId) => contactID);
     if (noteFormData) {
       let appendedNoteFormData = new FormData();
       appendedNoteFormData.append('contact_id', contactID);
@@ -236,8 +279,19 @@ function App() {
             NOTIFICATION_TYPES.SUCCESS,
             'Note added successfully'
           );
-          getIfCustomerData(searchValue, searchBy);
+          getIfCustomerDataNoLoading(searchValue, searchBy);
           setNoteLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+          setSelectedTabs((prevTabs: any) => ({
+            ...prevTabs,
+            [contactID]: 'note',
+          }));
+
+          setSelectedCustomerTabs((prevCustomerTabs: any) => ({
+            ...prevCustomerTabs,
+            [contactID]: true,
+          }));
+
+          setNoteFormData(initialNoteData);
         } else {
           HelpScout.showNotification(
             NOTIFICATION_TYPES.ERROR,
@@ -267,6 +321,7 @@ function App() {
     e.preventDefault();
     // console.log("contactID", contactID);
     const contactByEmail = contacts.find((contact: { id: any; }) => contact.id === contactID);
+    setSelectedContactId((prevContactId) => contactID);
     // console.log("contactByEmail", contactByEmail);
     if ((leadEmail != "" && leadTeamEmail != "" && leadDescription != "" && leadEmail != null && leadTeamEmail != null && leadDescription != null) || (contactByEmail.email != "" && contactByEmail.email != null)) {
       let appendedAddLeadFormData = new FormData();
@@ -316,8 +371,18 @@ function App() {
                   );
                 }
 
-                getIfCustomerData(searchValue, searchBy);
                 setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+                getIfCustomerDataNoLoading(searchValue, searchBy);
+                setSelectedTabs((prevTabs: any) => ({
+                  ...prevTabs,
+                  [contactID]: 'lead',
+                }));
+
+                setSelectedCustomerTabs((prevCustomerTabs: any) => ({
+                  ...prevCustomerTabs,
+                  [contactID]: true,
+                }));
+                setLeadDescription('');
               } else {
                 HelpScout.showNotification(
                   NOTIFICATION_TYPES.ERROR,
@@ -380,9 +445,18 @@ function App() {
                   'Hot lead added successfully!'
                 );
               }
-
-              getIfCustomerData(searchValue, searchBy);
               setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
+              getIfCustomerDataNoLoading(searchValue, searchBy);
+              setSelectedTabs((prevTabs: any) => ({
+                ...prevTabs,
+                [contactID]: 'lead',
+              }));
+
+              setSelectedCustomerTabs((prevCustomerTabs: any) => ({
+                ...prevCustomerTabs,
+                [contactID]: true,
+              }));
+              setLeadDescription('');
             } else {
               HelpScout.showNotification(
                 NOTIFICATION_TYPES.ERROR,
@@ -431,26 +505,33 @@ function App() {
       ...prevTabs,
       [userId]: tab,
     }));
-  };
 
-  // Handle other tab change for a specific user
-  const handleOtherTabChange = (userId: number, tab: 'info' | 'credits' | 'note' | 'lead') => {
-    setSelectedOtherTabs((prevTabs: any) => ({
-      ...prevTabs,
-      [userId]: tab,
-    }));
-  };  
+    setLeadDescription('');
+    setNoteFormData(initialNoteData);
+  };
 
   const handleCustomerTabChange = (userId: number, tab: true | false) => {
     setSelectedCustomerTabs((prevCustomerTabs: any) => ({
       ...prevCustomerTabs,
       [userId]: !tab,
     }));
+
+    setSelectedContactId((prevSelectedContactId) => userId);
+    setLeadDescription('');
+    setNoteFormData(initialNoteData);
   };
+
+  // Handle other tab change for a specific user
+  // const handleOtherTabChange = (userId: number, tab: 'info' | 'credits' | 'note' | 'lead') => {
+  //   setSelectedOtherTabs((prevTabs: any) => ({
+  //     ...prevTabs,
+  //     [userId]: tab,
+  //   }));
+  // };  
 
   useEffect(() => {
     setUserEmail(user?.email);
-    setAdminName(user?.firstName + '' + user?.lastName);
+    setAdminName(user?.firstName + ' ' + user?.lastName);
     setStatus(conversation?.status);
     setLeadTeamEmail(user?.email);
     if (conversation?.customers) {
@@ -473,6 +554,24 @@ function App() {
       setIsAllowed(false);
     }
   }, [customer]);
+
+  useEffect(() => {
+    // Ensure contacts array is not empty
+    if (selectedContactId) {
+      setSelectedCustomerTabs((prevCustomerTabs: any) => ({
+        ...prevCustomerTabs,
+        [selectedContactId]: true,
+      }));
+    } else {
+      if (contacts.length > 0) {
+        setSelectedCustomerTabs((prevCustomerTabs: any) => ({
+          ...prevCustomerTabs,
+          [contacts[0].id]: true,
+        }));
+      }
+    }
+    
+  }, [contacts]);
 
   const onClick = () => {
     HelpScout.showNotification(
@@ -604,25 +703,25 @@ function App() {
                                     <div className="tab-container">
                                       {/* Tab links */}
                                       <div className="tab">
-                                        <button type="button" onClick={() => handleTabChange(contact.id, 'info')} className={`tablinks contact-info ${selectedTabs[contact.id] === 'info' ? 'active' : ''}`} data-val={contact.id}>
+                                        <button type="button" onClick={() => handleTabChange(contact.id, 'info')} className={`tablinks contact-info ${(selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'info') || !selectedTabs?.[contact.id] ? 'active' : ''}`} data-val={contact.id}>
                                           <i className="fa fa-id-card" style={{ fontSize: '15px' }}></i>
                                         </button>
-                                        <button type="button" onClick={() => handleTabChange(contact.id, 'credits')} className={`tablinks contact-coaching ${selectedTabs[contact.id] === 'credits' ? 'active' : ''}`} data-val={contact.id}>
+                                        <button type="button" onClick={() => handleTabChange(contact.id, 'credits')} className={`tablinks contact-coaching ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'credits' ? 'active' : ''}`} data-val={contact.id}>
                                           <i className="fa fa-users" style={{ fontSize: '15px' }}></i>
                                         </button>
-                                        <button type="button" onClick={() => handleTabChange(contact.id, 'note')} className={`tablinks contact-note ${selectedTabs[contact.id] === 'note' ? 'active' : ''}`} data-val={contact.id}>
+                                        <button type="button" onClick={() => handleTabChange(contact.id, 'note')} className={`tablinks contact-note ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'note' ? 'active' : ''}`} data-val={contact.id}>
                                           <i className="fa fa-pen" style={{ fontSize: '15px' }}></i>
                                         </button>
                                         {/* <button className="tablinks contact-call" data-val={contact.id}>
                                         <i className="fa fa-phone" style={{fontSize: '20px'}}></i>
                                       </button> */}
-                                        <button type="button" onClick={() => handleTabChange(contact.id, 'lead')} className={`tablinks contact-hot-lead ${selectedTabs[contact.id] === 'lead' ? 'active' : ''}`} data-val={contact.id}>
+                                        <button type="button" onClick={() => handleTabChange(contact.id, 'lead')} className={`tablinks contact-hot-lead ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'lead' ? 'active' : ''}`} data-val={contact.id}>
                                           <i className="fa fa-plus" style={{ fontSize: '15px' }}></i>
                                         </button>
                                       </div>
                                     </div>
                                     <div className="tab-contents pt-3 pe-3 ps-3 pb-2">
-                                      <div className={`tab-content contact-info-content ${selectedTabs[contact.id] === 'info' ? 'active' : ''}`}>
+                                      <div className={`tab-content contact-info-content ${(selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'info') || !selectedTabs?.[contact.id] ? 'active' : ''}`}>
                                         <div className="row">
                                           <div className="col-lg-12">
                                             {/* <!-- <h6 className="info-header">Email <span className="mb-0 ps-3" style="font-weight: 400">Status: <span className="email-status">{{contact.email_status}}</span></span></h6> --> */}
@@ -718,7 +817,7 @@ function App() {
                                           </div>
                                         </div>
                                       </div>
-                                      <div className={`tab-content contact-coaching-content ${selectedTabs[contact.id] === 'credits' ? 'active' : ''}`}>
+                                      <div className={`tab-content contact-coaching-content ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'credits' ? 'active' : ''}`}>
                                         <div className="row">
                                           <div className="col-lg-12">
                                             {custom_fields && custom_fields.length > 0 ?
@@ -745,13 +844,13 @@ function App() {
                                           </div>
                                         </div>
                                       </div>
-                                      <div className={`tab-content contact-note-content ${selectedTabs[contact.id] === 'note' ? 'active' : ''}`}>
+                                      <div className={`tab-content contact-note-content ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'note' ? 'active' : ''}`}>
                                         <div className="row">
                                           <div className="col-lg-12">
                                             <form onSubmit={() => addLeadNote(contact.id, event)}>
                                               <h6 className="tags-header mb-2 mt-0">Add Note</h6>
-                                              <input type="text" placeholder="Title" className="form-control mb-3" id={`note-title-${contact.id}`} name="title" onChange={handleChangeNote} />
-                                              <textarea placeholder="Note" className="form-control" id={`note-${contact.id}`} rows={3} name="body" onChange={handleChangeNote}></textarea>
+                                              <input type="text" placeholder="Title" className="form-control mb-3" value={noteFormData.title} id={`note-title-${contact.id}`} name="title" onChange={handleChangeNote} />
+                                              <textarea placeholder="Note" className="form-control" value={noteFormData.body} id={`note-${contact.id}`} rows={3} name="body" onChange={handleChangeNote}></textarea>
                                               <button
                                                 className="btn add-note-btn btn-primary w-100 mt-3"
                                                 data-val={contact.id}
@@ -772,7 +871,13 @@ function App() {
                                                         {note.title}({note.type}) - {note.date_created} <i className={`fa fa-chevron-down ${activeNoteId == note.id ? 'active' : ''}`}></i>
                                                       </div>
                                                       <div className={`card-body p-2 ${activeNoteId == note.id ? 'active' : ''}`}>
-                                                        {note.body}
+                                                        {note.body ?
+                                                          note.body
+                                                          : note.text ?
+                                                          note.text
+                                                          :
+                                                          null
+                                                        }
                                                       </div>
                                                     </div>
 
@@ -785,14 +890,14 @@ function App() {
                                           </div>
                                         </div>
                                       </div>
-                                      <div className={`tab-content contact-hot-lead-content ${selectedTabs[contact.id] === 'lead' ? 'active' : ''}`}>
+                                      <div className={`tab-content contact-hot-lead-content ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'lead' ? 'active' : ''}`}>
                                         <div className="row">
                                           <div className="col-lg-12">
                                             <h6 className="tags-header mb-2 mt-0">Add Lead</h6>
                                             <form id="add-hot-lead-form" onSubmit={() => addLead(contact.id, event)}>
                                               <input type="email" placeholder="Customer Email" className="form-control mb-3" id="hot-lead-email" name="customer_email" defaultValue={contact?.email} onChange={handleChangeAddLeadEmail} />
                                               <input type="tel" placeholder="Customer Phone" className="form-control mb-3" id="hot-lead-phone" name="phone_number" defaultValue={contact?.phone} onChange={handleChangeAddLeadPhone} />
-                                              <textarea placeholder="Notes" className="form-control mb-3" id="hot-lead-notes" rows={3} name="lead_description" onChange={handleChangeAddLeadDescription}></textarea>
+                                              <textarea placeholder="Notes" className="form-control mb-3" id="hot-lead-notes" rows={3} name="lead_description" value={leadDescription} onChange={handleChangeAddLeadDescription}></textarea>
                                               <input type="email" placeholder="Agent Email" className="form-control mb-3" name="team_email" id="hot-lead-team-email" defaultValue={userEmail} onChange={handleChangeAddLeadTeamEmail} />
                                               {/* <p id="lead-error">Please fill up all fields!</p>
                                               <p id="lead-success">Lead added successfully!</p> */}

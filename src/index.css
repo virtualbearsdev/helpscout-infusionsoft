@@ -416,7 +416,7 @@ div.tags-details:nth-child(even) {
 
 .note-card .card-body {
   display: none;
-  font-size: 13pxs;
+  font-size: 13px;
 }
 
 .note-card .card-body.active {
