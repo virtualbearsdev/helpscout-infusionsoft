@@ -204,30 +204,30 @@ function App() {
     // setInitialTabNavigation('info');
   };
 
-  const addLeadTag = async (tagID: any, leadID: any, e: any) => {
+  const addLeadTag = async (tag_id: any, contact_id: any, e: any) => {
     e.preventDefault();
-    if (tagID && leadID) {
+    if (tag_id && contact_id) {
       try {
-        setTagLoading((prevLoading) => ({ ...prevLoading, [leadID]: true }));
+        setTagLoading((prevLoading) => ({ ...prevLoading, [contact_id]: true }));
         const response = await axios.post(
-          import.meta.env.VITE_APP_API_ENDPOINT + 'add-tag-zendesk.php', { tagID, leadID }
+          import.meta.env.VITE_APP_API_ENDPOINT + 'add-tag-zendesk.php', { tag_id, contact_id }
         );
 
         const { status, error } = response.data;
 
-        if (status == "Success") {
+        if (status == "SUCCESS") {
           HelpScout.showNotification(
             NOTIFICATION_TYPES.SUCCESS,
             'Tag added successfully'
           );
           getIfCustomerDataNoLoading(searchValue, searchBy);
-          setTagLoading((prevLoading) => ({ ...prevLoading, [leadID]: false }));
+          setTagLoading((prevLoading) => ({ ...prevLoading, [contact_id]: false }));
         } else {
           HelpScout.showNotification(
             NOTIFICATION_TYPES.ERROR,
             status
           );
-          setTagLoading((prevLoading) => ({ ...prevLoading, [leadID]: false }));
+          setTagLoading((prevLoading) => ({ ...prevLoading, [contact_id]: false }));
         }
       } catch (err) {
         HelpScout.showNotification(
@@ -244,7 +244,7 @@ function App() {
           console.log(response);
         }
 
-        setTagLoading((prevLoading) => ({ ...prevLoading, [leadID]: false }));
+        setTagLoading((prevLoading) => ({ ...prevLoading, [contact_id]: false }));
       }
     } else {
       HelpScout.showNotification(
