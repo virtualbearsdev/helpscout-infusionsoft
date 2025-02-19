@@ -58,14 +58,68 @@ function App() {
   const [activeNoteId, setActiveNoteId] = useState<number | null>(null);
   const [isAllowed, setIsAllowed] = useState<boolean | null>(false);
   const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
+  
+
+  const [messages, setMessages] = useState<any | null>([]);
+  const [messagesReady, setMessagesReady] = useState<boolean | null>(false);
+  const [messagesLoading, setMessagesLoading] = useState<boolean | null>(true);
+  const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
 
   type SelectedTabs = {
-    [userId: number]: 'info' | 'credits' | 'note' | 'lead';
+    [userId: number]: 'info' | 'credits' | 'note' | 'lead' | 'messages';
   };
 
   type ActiveTabs = {
     [userId: number]: true | false;
   }
+
+  // Send the conversation to N8N
+  const postMessages = async () => {
+    setMessagesLoading(true);
+    try {
+      const response = await axios.post(
+        `https://n8n.dropshiplifestyle.org/webhook/e31e7033-5eb1-4643-a39e-607755aa0ee6`, 
+        { messages: messages, conversation: conversation },
+        {
+          headers: {
+            'x-special-key': `dr0psh1pl1f3styl3`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log(response.data);
+      setMessagesLoading(false);
+    } catch (err) {
+        HelpScout.showNotification(
+            NOTIFICATION_TYPES.ERROR,
+            "There has been an error sending the messages data, please try again!"
+        );
+    }
+};
+
+  const fetchMessages = async (conversationId: any) => {
+    try {
+      const response = await axios.get(`https://manhattan-theme-generator.jenocabrera.tech/api/helpscout/conversation/${conversationId}/messages`, {
+        headers: {
+          'x-special-key': `dr0psh1pl1f3styl3`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      var status = response.data.status;
+      if (status == "Success") {
+        var conversationData = response.data.conversation;
+        setMessages(conversationData._embedded.threads);
+        setMessagesReady(true);
+        console.log(conversationData._embedded.threads);
+      }
+    } catch (err) {
+      HelpScout.showNotification(
+        NOTIFICATION_TYPES.ERROR,
+        "There has been an error getting the messages data, please try again!"
+      );
+    }
+  };
 
   const handleSearchChange = (e: any) => {
     setSearchValue(e.target.value);
@@ -500,7 +554,7 @@ function App() {
   };
 
   // Handle tab change for a specific user
-  const handleTabChange = (userId: number, tab: 'info' | 'credits' | 'note' | 'lead') => {
+  const handleTabChange = (userId: number, tab: 'info' | 'credits' | 'note' | 'lead' | 'messages') => {
     setSelectedTabs((prevTabs: any) => ({
       ...prevTabs,
       [userId]: tab,
@@ -540,6 +594,10 @@ function App() {
       setCustomerEmail(customerData.emails[0].value);
       setSearchValue(customerData.emails[0].value);
     }
+
+    if (conversation) {
+      fetchMessages(conversation.id);
+    }
   }, [user, conversation]);
 
   useEffect(() => {
@@ -554,6 +612,13 @@ function App() {
       setIsAllowed(false);
     }
   }, [customer]);
+
+
+  // useEffect(() => {
+  //   if (messagesReady) {
+  //     postMessages();
+  //   }
+  // }, [messages, messagesReady]);
 
   useEffect(() => {
     // Ensure contacts array is not empty
@@ -580,9 +645,9 @@ function App() {
     );
   }
 
-  if (!isAllowed) {
-    return <div className="App" ref={appRef}>Access Restricted: You cannot access this page directly.</div>;
-  }
+  // if (!isAllowed) {
+  //   return <div className="App" ref={appRef}>Access Restricted: You cannot access this page directly.</div>;
+  // }
   
   return (
     <div className="App" ref={appRef}>
@@ -717,6 +782,9 @@ function App() {
                                       </button> */}
                                         <button type="button" onClick={() => handleTabChange(contact.id, 'lead')} className={`tablinks contact-hot-lead ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'lead' ? 'active' : ''}`} data-val={contact.id}>
                                           <i className="fa fa-plus" style={{ fontSize: '15px' }}></i>
+                                        </button>
+                                        <button type="button" onClick={function() { handleTabChange(contact.id, 'messages'); postMessages(); }} className={`tablinks contact-hot-lead ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'messages' ? 'active' : ''}`} data-val={contact.id}>
+                                          <i className="fa fa-envelope" style={{ fontSize: '15px' }}></i>
                                         </button>
                                       </div>
                                     </div>
@@ -911,6 +979,53 @@ function App() {
                                                 {addLeadLoading[contact.id] ? "Adding..." : "Add"}
                                               </button>
                                             </form>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className={`tab-content contact-messages-content ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'messages' ? 'active' : ''}`}>
+                                        <div className="row">
+                                          <div className="col-lg-12">
+                                            <h6 className="tags-header mb-2 mt-0">Messages</h6>
+                                            <div className="messages-container">
+                                              <div className="row">
+                                                {messagesLoading ?
+                                                  <div id="loading-gif">
+                                                    <img src={LoadingImg} />
+                                                  </div>
+                                                  :
+                                                  <>
+                                                    {messages && messages.length > 0 ?
+                                                      <>
+                                                        {messages.filter((message: any) => message.type !== "lineitem").map((message: any) => {
+                                                          var sender = message.createdBy;
+                                                          var recipient = message.assignedTo;
+                                                          
+                                                          return (
+                                                            <div className="message-container mb-3 active col-lg-12">
+                                                              <div className="card">
+                                                                <div className="card-header message-header" data-val={message.id}>
+                                                                  <h6 className="info-header mb-0">
+                                                                    <span>{sender.first} {sender.last}</span></h6>
+                                                                </div>
+                                                                <div className="card-body">
+                                                                  <p className="small mb-0">From: {sender.email}</p>
+                                                                  <p className="small">To: {recipient.email}</p>
+                                                                  <div className="small" dangerouslySetInnerHTML={{ __html: message.body }} />
+                                                                </div>
+                                                              </div>
+                                                              
+                                                            </div>
+                                                          );
+                                                        })}
+                                                      </>
+                                                      :
+                                                      <p className="mb-0">No records found.</p>
+                                                    }
+                                                  </>
+                                                }
+                                              </div>
+                                            </div>
                                           </div>
                                         </div>
                                       </div>
