@@ -78,7 +78,7 @@ function App() {
     setMessagesLoading(true);
     try {
       const response = await axios.post(
-        `https://n8n.dropshiplifestyle.org/webhook/e31e7033-5eb1-4643-a39e-607755aa0ee6`, 
+        `https://n8n.dropshiplifestyle.org/webhook-test/e31e7033-5eb1-4643-a39e-607755aa0ee6`, 
         { messages: messages, conversation: conversation },
         {
           headers: {
