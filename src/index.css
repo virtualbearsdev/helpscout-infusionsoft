@@ -423,6 +423,13 @@ div.tags-details:nth-child(even) {
   display: block;
 }
 
+.copy-btn {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 7px;
+  padding: 0px 5px !important;
+}
+
 .note-card .fa-chevron-down {
   position: absolute;
   right: 10px;

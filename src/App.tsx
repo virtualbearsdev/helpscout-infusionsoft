@@ -15,6 +15,7 @@ import axios from "axios";
 import LoadingImg from './assets/images/loading.gif';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
+import React, { useRef } from "react";
 
 const initialNoteData = Object.freeze({
   contact_id: '',
@@ -28,6 +29,7 @@ function App() {
   const [userEmail, setUserEmail] = useState<string | undefined>(
     "unknown user"
   );
+  const textAreaRef = useRef(null);
   const [customer, setCustomer] = useState<any | null>(null);
   const [contacts, setContacts] = useState<any | null>([]);
   const [otherContacts, setOtherContacts] = useState<any | null>([]);
@@ -58,12 +60,13 @@ function App() {
   const [activeNoteId, setActiveNoteId] = useState<number | null>(null);
   const [isAllowed, setIsAllowed] = useState<boolean | null>(false);
   const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
-  
+
 
   const [messages, setMessages] = useState<any | null>([]);
   const [messagesReady, setMessagesReady] = useState<boolean | null>(false);
   const [messagesLoading, setMessagesLoading] = useState<boolean | null>(true);
   const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
+  const [messageResponse, setMessageResponse] = useState<any | null>('');
 
   type SelectedTabs = {
     [userId: number]: 'info' | 'credits' | 'note' | 'lead' | 'messages';
@@ -78,7 +81,7 @@ function App() {
     setMessagesLoading(true);
     try {
       const response = await axios.post(
-        `https://n8n.dropshiplifestyle.org/webhook-test/e31e7033-5eb1-4643-a39e-607755aa0ee6`, 
+        `https://n8n.dropshiplifestyle.org/webhook/e31e7033-5eb1-4643-a39e-607755aa0ee6`,
         { messages: messages, conversation: conversation },
         {
           headers: {
@@ -88,14 +91,38 @@ function App() {
         }
       );
       console.log(response.data);
+      if (response.data.content) {
+        setMessageResponse(response.data.content);
+      }
       setMessagesLoading(false);
     } catch (err) {
-        HelpScout.showNotification(
-            NOTIFICATION_TYPES.ERROR,
-            "There has been an error sending the messages data, please try again!"
-        );
+      HelpScout.showNotification(
+        NOTIFICATION_TYPES.ERROR,
+        "There has been an error sending the messages data, please try again!"
+      );
     }
-};
+  };
+
+  const copyToClipboard = (event: any, text: any) => {
+    // Create a temporary textarea element
+    const tempTextArea = document.createElement("textarea");
+    tempTextArea.value = text;
+    document.body.appendChild(tempTextArea);
+
+    // Select the text
+    tempTextArea.select();
+    tempTextArea.setSelectionRange(0, 99999); // For mobile support
+
+    // Copy to clipboard
+    const success = document.execCommand("copy");
+    document.body.removeChild(tempTextArea); // Clean up
+
+    if (success) {
+      alert("Copied to clipboard!");
+    } else {
+      console.error("Copy command failed");
+    }
+  };
 
   const fetchMessages = async (conversationId: any) => {
     try {
@@ -105,7 +132,7 @@ function App() {
           'Content-Type': 'application/json',
         },
       });
-  
+
       var status = response.data.status;
       if (status == "Success") {
         var conversationData = response.data.conversation;
@@ -635,7 +662,7 @@ function App() {
         }));
       }
     }
-    
+
   }, [contacts]);
 
   const onClick = () => {
@@ -645,10 +672,10 @@ function App() {
     );
   }
 
-  // if (!isAllowed) {
-  //   return <div className="App" ref={appRef}>Access Restricted: You cannot access this page directly.</div>;
-  // }
-  
+  if (!isAllowed) {
+    return <div className="App" ref={appRef}>Access Restricted: You cannot access this page directly.</div>;
+  }
+
   return (
     <div className="App" ref={appRef}>
       <div id="content">
@@ -783,7 +810,7 @@ function App() {
                                         <button type="button" onClick={() => handleTabChange(contact.id, 'lead')} className={`tablinks contact-hot-lead ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'lead' ? 'active' : ''}`} data-val={contact.id}>
                                           <i className="fa fa-plus" style={{ fontSize: '15px' }}></i>
                                         </button>
-                                        <button type="button" onClick={function() { handleTabChange(contact.id, 'messages'); postMessages(); }} className={`tablinks contact-hot-lead ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'messages' ? 'active' : ''}`} data-val={contact.id}>
+                                        <button type="button" style={{display:'none'}} onClick={function () { handleTabChange(contact.id, 'messages'); postMessages(); }} className={`tablinks contact-hot-lead ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'messages' ? 'active' : ''}`} data-val={contact.id}>
                                           <i className="fa fa-envelope" style={{ fontSize: '15px' }}></i>
                                         </button>
                                       </div>
@@ -942,9 +969,9 @@ function App() {
                                                         {note.body ?
                                                           note.body
                                                           : note.text ?
-                                                          note.text
-                                                          :
-                                                          null
+                                                            note.text
+                                                            :
+                                                            null
                                                         }
                                                       </div>
                                                     </div>
@@ -986,7 +1013,29 @@ function App() {
                                       <div className={`tab-content contact-messages-content ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'messages' ? 'active' : ''}`}>
                                         <div className="row">
                                           <div className="col-lg-12">
-                                            <h6 className="tags-header mb-2 mt-0">Messages</h6>
+                                            <div className="d-flex justify-content-between">
+                                              <h6 className="tags-header mb-2 mt-0">Messages</h6>
+                                              {messagesLoading ?
+                                                null
+                                                :
+                                                <>
+                                                  {messageResponse ?
+                                                    <>
+                                                      {messageResponse.length > 0 ?
+                                                        <button className="btn btn-primary copy-btn" onClick={() => copyToClipboard(event, messageResponse)}><i className="fa-solid fa-copy" style={{fontSize:'12px', marginBottom:'5px'}}></i></button>
+                                                        :
+                                                        null
+                                                      }
+                                                    </>
+                                                    :
+                                                    null
+
+                                                  }
+                                                </>
+                                              }
+
+                                            </div>
+
                                             <div className="messages-container">
                                               <div className="row">
                                                 {messagesLoading ?
@@ -1000,9 +1049,10 @@ function App() {
                                                         {messages.filter((message: any) => message.type !== "lineitem").map((message: any) => {
                                                           var sender = message.createdBy;
                                                           var recipient = message.assignedTo;
-                                                          
+
                                                           return (
                                                             <div className="message-container mb-3 active col-lg-12">
+                                                              <textarea id="custom_code" ref={textAreaRef} style={{ display: 'none' }} defaultValue={messageResponse}></textarea>
                                                               <div className="card">
                                                                 <div className="card-header message-header" data-val={message.id}>
                                                                   <h6 className="info-header mb-0">
@@ -1014,13 +1064,16 @@ function App() {
                                                                   <div className="small" dangerouslySetInnerHTML={{ __html: message.body }} />
                                                                 </div>
                                                               </div>
-                                                              
+
                                                             </div>
                                                           );
                                                         })}
                                                       </>
                                                       :
-                                                      <p className="mb-0">No records found.</p>
+                                                      <>
+                                                        <textarea id="custom_code" ref={textAreaRef} style={{ display: 'none' }} defaultValue={messageResponse}></textarea>
+                                                        <p className="mb-0">No records found.</p>
+                                                      </>
                                                     }
                                                   </>
                                                 }
