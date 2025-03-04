@@ -82,6 +82,7 @@ function App() {
     try {
       const response = await axios.post(
         `https://n8n.dropshiplifestyle.org/webhook/e31e7033-5eb1-4643-a39e-607755aa0ee6`,
+        // `https://n8n.dropshiplifestyle.org/webhook-test/e31e7033-5eb1-4643-a39e-607755aa0ee6`,
         { messages: messages, conversation: conversation },
         {
           headers: {
@@ -90,7 +91,7 @@ function App() {
           },
         }
       );
-      console.log(response.data);
+      // console.log(response.data);
       if (response.data.content) {
         setMessageResponse(response.data.content);
       }
@@ -118,9 +119,16 @@ function App() {
     document.body.removeChild(tempTextArea); // Clean up
 
     if (success) {
-      alert("Copied to clipboard!");
+      HelpScout.showNotification(
+        NOTIFICATION_TYPES.SUCCESS,
+        'Copied to clipboard!'
+      );
     } else {
       console.error("Copy command failed");
+      HelpScout.showNotification(
+        NOTIFICATION_TYPES.ERROR,
+        'Failed to copy text!'
+      );
     }
   };
 
@@ -138,7 +146,7 @@ function App() {
         var conversationData = response.data.conversation;
         setMessages(conversationData._embedded.threads);
         setMessagesReady(true);
-        console.log(conversationData._embedded.threads);
+        // console.log(conversationData._embedded.threads);
       }
     } catch (err) {
       HelpScout.showNotification(
@@ -810,7 +818,7 @@ function App() {
                                         <button type="button" onClick={() => handleTabChange(contact.id, 'lead')} className={`tablinks contact-hot-lead ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'lead' ? 'active' : ''}`} data-val={contact.id}>
                                           <i className="fa fa-plus" style={{ fontSize: '15px' }}></i>
                                         </button>
-                                        <button type="button" style={{display:'none'}} onClick={function () { handleTabChange(contact.id, 'messages'); postMessages(); }} className={`tablinks contact-hot-lead ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'messages' ? 'active' : ''}`} data-val={contact.id}>
+                                        <button type="button" onClick={function () { handleTabChange(contact.id, 'messages'); postMessages(); }} className={`tablinks contact-hot-lead ${selectedTabs?.[contact.id] && selectedTabs?.[contact.id] === 'messages' ? 'active' : ''}`} data-val={contact.id}>
                                           <i className="fa fa-envelope" style={{ fontSize: '15px' }}></i>
                                         </button>
                                       </div>
@@ -1044,30 +1052,18 @@ function App() {
                                                   </div>
                                                   :
                                                   <>
-                                                    {messages && messages.length > 0 ?
+                                                    {messageResponse && messageResponse.length > 0 ?
                                                       <>
-                                                        {messages.filter((message: any) => message.type !== "lineitem").map((message: any) => {
-                                                          var sender = message.createdBy;
-                                                          var recipient = message.assignedTo;
-
-                                                          return (
                                                             <div className="message-container mb-3 active col-lg-12">
                                                               <textarea id="custom_code" ref={textAreaRef} style={{ display: 'none' }} defaultValue={messageResponse}></textarea>
                                                               <div className="card">
-                                                                <div className="card-header message-header" data-val={message.id}>
-                                                                  <h6 className="info-header mb-0">
-                                                                    <span>{sender.first} {sender.last}</span></h6>
-                                                                </div>
                                                                 <div className="card-body">
-                                                                  <p className="small mb-0">From: {sender.email}</p>
-                                                                  <p className="small">To: {recipient.email}</p>
-                                                                  <div className="small" dangerouslySetInnerHTML={{ __html: message.body }} />
+                                                                  {/* <textarea disabled readOnly={true}>{messageResponse}</textarea> */}
+                                                                  <pre style={{ whiteSpace: "pre-wrap", fontFamily:'Montserrat, sans-serif' }}>{messageResponse}</pre>
                                                                 </div>
                                                               </div>
 
                                                             </div>
-                                                          );
-                                                        })}
                                                       </>
                                                       :
                                                       <>
