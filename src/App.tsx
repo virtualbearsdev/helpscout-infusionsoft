@@ -549,14 +549,14 @@ function App() {
             } else {
               HelpScout.showNotification(
                 NOTIFICATION_TYPES.ERROR,
-                "There has been an error adding note, please try again!"
+                "There has been an error adding lead, please try again!"
               );
               setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
             }
           } catch (err) {
             HelpScout.showNotification(
               NOTIFICATION_TYPES.ERROR,
-              "There has been an error adding note, please try again!"
+              "There has been an error adding lead, please try again!"
             );
 
             setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
