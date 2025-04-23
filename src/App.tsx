@@ -311,6 +311,7 @@ function App() {
           );
           getIfCustomerDataNoLoading(searchValue, searchBy);
           setTagLoading((prevLoading) => ({ ...prevLoading, [contact_id]: false }));
+          setSelectedTag('');
         } else {
           HelpScout.showNotification(
             NOTIFICATION_TYPES.ERROR,
@@ -895,8 +896,8 @@ function App() {
                                               <div className="col-lg-12 px-0 tag-selection-container">
                                                 <form onSubmit={() => addLeadTag(selectedTag, contact?.id, event)}>
                                                   <div className="input-group mb-3">
-                                                    <select name="tags_selection" className="form-control select-tag" id={`tag-select-${contact.id}`} onChange={handleTagChange}>
-                                                      <option hidden selected value="">Select a tag</option>
+                                                    <select name="tags_selection" className="form-control select-tag" id={`tag-select-${contact.id}`} value={selectedTag} onChange={handleTagChange}>
+                                                      <option selected value="">Select a tag</option>
                                                       {add_tags.map((add_tag: any) => (
                                                         <option value={add_tag.id}>{add_tag.name}</option>
                                                       ))}
