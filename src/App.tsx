@@ -448,18 +448,10 @@ function App() {
               const { status, error } = response.data;
 
               if (status == "success") {
-                // https://zapier.com/editor/174158095/published/174158095
-                // Failsafe
-                const response = await axios.post(
-                  'https://hooks.zapier.com/hooks/catch/911460/bpq0tp5/', appendedAddLeadFormData,
+                HelpScout.showNotification(
+                  NOTIFICATION_TYPES.SUCCESS,
+                  'Hot lead added successfully!'
                 );
-                const { status, error } = response.data;
-                if (status == "success") {
-                  HelpScout.showNotification(
-                    NOTIFICATION_TYPES.SUCCESS,
-                    'Hot lead added successfully!'
-                  );
-                }
 
                 setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
                 getIfCustomerDataNoLoading(searchValue, searchBy);
@@ -483,7 +475,7 @@ function App() {
             } catch (err) {
               HelpScout.showNotification(
                 NOTIFICATION_TYPES.ERROR,
-                "There has been an error adding note, please try again!"
+                "There has been an error adding lead, please try again!"
               );
 
               setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
@@ -523,18 +515,11 @@ function App() {
             const { status, error } = response.data;
 
             if (status == "success") {
-              // https://zapier.com/editor/174158095/published/174158095
-              // Failsafe
-              const response = await axios.post(
-                'https://hooks.zapier.com/hooks/catch/911460/bpq0tp5/', appendedAddLeadFormData,
+              HelpScout.showNotification(
+                NOTIFICATION_TYPES.SUCCESS,
+                'Hot lead added successfully!'
               );
-              const { status, error } = response.data;
-              if (status == "success") {
-                HelpScout.showNotification(
-                  NOTIFICATION_TYPES.SUCCESS,
-                  'Hot lead added successfully!'
-                );
-              }
+              
               setAddLeadLoading((prevLoading) => ({ ...prevLoading, [contactID]: false }));
               getIfCustomerDataNoLoading(searchValue, searchBy);
               setSelectedTabs((prevTabs: any) => ({
